@@ -25,6 +25,7 @@ func (k kafka) CommitMessageToQueue(message []byte) error {
 
 	producer, err := k.connectProducer(brokersUrl)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	defer producer.Close()
@@ -36,6 +37,7 @@ func (k kafka) CommitMessageToQueue(message []byte) error {
 
 	partition, offset, err := producer.SendMessage(msg)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 

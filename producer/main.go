@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"golang-kafka-producer/src/controller"
+	"golang-kafka-producer-consumer/producer/controller"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	httpServer "golang-kafka-producer/src/http"
-	kafka "golang-kafka-producer/src/kafka"
+	httpServer "golang-kafka-producer-consumer/producer/http"
+	kafka "golang-kafka-producer-consumer/producer/kafka"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -32,6 +32,11 @@ func main() {
 	}
 
 	kafka_handler := kafka.NewKafkaHandler(brokers, topic)
+
+	/* var wg sync.WaitGroup
+	wg.Add(1) */
+	// kafka_handler.MakeConsumer()
+
 	ctrl := controller.NewController(kafka_handler)
 	http_server := httpServer.NewHTTPServer(ctrl)
 

@@ -1,4 +1,4 @@
-module golang-kafka-producer
+module golang-kafka-producer-consumer
 
 go 1.15
 

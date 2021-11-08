@@ -2,9 +2,9 @@ package httpServer
 
 import (
 	"encoding/json"
-	"golang-kafka-producer/src/controller"
-	"golang-kafka-producer/src/entity"
-	"golang-kafka-producer/src/util"
+	"golang-kafka-producer-consumer/producer/controller"
+	"golang-kafka-producer-consumer/producer/entity"
+	"golang-kafka-producer-consumer/producer/util"
 	"io/ioutil"
 	"net/http"
 
@@ -59,11 +59,11 @@ func (h *httpServer) CommitMessage(res http.ResponseWriter, req *http.Request) {
 
 	response, err := h.ctrl.CommitMessage(msgInBytes)
 	if err != nil {
-		log.WithFields(log.Fields{"package": "httpServer", "method": "GetSuperheroes"}).Error(err.Error())
+		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
 		HandleCustomError(res, err)
 		return
 	}
-	log.WithFields(log.Fields{"package": "httpServer", "method": "GetSuperheroes"}).Info("ok")
+	log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Info("ok")
 	json.NewEncoder(res).Encode(response)
 }
 

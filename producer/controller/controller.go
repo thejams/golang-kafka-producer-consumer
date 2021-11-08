@@ -1,7 +1,7 @@
 package controller
 
 import (
-	kafka "golang-kafka-producer/src/kafka"
+	kafka "golang-kafka-producer-consumer/producer/kafka"
 
 	log "github.com/sirupsen/logrus"
 )
