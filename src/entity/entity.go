@@ -4,3 +4,4 @@ package entity
 type Message struct {
 	MSG string `json:"msg"`
 }
+

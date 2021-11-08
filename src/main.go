@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"golang-kafka-producer/src/controller"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	httpServer "golang-kafka-producer-consumer/src/http"
+	httpServer "golang-kafka-producer/src/http"
+	kafka "golang-kafka-producer/src/kafka"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -19,12 +21,25 @@ func main() {
 		port = ":5000"
 	}
 
-	http_server := httpServer.NewHTTPServer()
+	brokers := os.Getenv("Kafka_Brokers")
+	if len(strings.TrimSpace(brokers)) == 0 {
+		brokers = "localhost:9092"
+	}
+
+	topic := os.Getenv("Kafka_Topic")
+	if len(strings.TrimSpace(topic)) == 0 {
+		topic = "myTopic"
+	}
+
+	kafka_handler := kafka.NewKafkaHandler(brokers, topic)
+	ctrl := controller.NewController(kafka_handler)
+	http_server := httpServer.NewHTTPServer(ctrl)
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(commonMiddleware)
 
 	router.HandleFunc("/health", http_server.Health)
+	router.HandleFunc("/msg", http_server.CommitMessage)
 
 	credentials := handlers.AllowCredentials()
 	methods := handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"})
