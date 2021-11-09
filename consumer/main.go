@@ -30,7 +30,7 @@ func main() {
 	msgCount := 0
 
 	// Get signal for finish
-	doneCh := make(chan struct{})
+	quit := make(chan bool)
 	go func() {
 		for {
 			select {
@@ -41,12 +41,12 @@ func main() {
 				fmt.Printf("Received message Count %d: | Topic(%s) | Message(%s) \n", msgCount, string(msg.Topic), string(msg.Value))
 			case <-sigchan:
 				fmt.Println("Interrupt is detected")
-				doneCh <- struct{}{}
+				quit <- true
 			}
 		}
 	}()
 
-	<-doneCh
+	<-quit
 	fmt.Println("Processed", msgCount, "messages")
 
 	if err := worker.Close(); err != nil {

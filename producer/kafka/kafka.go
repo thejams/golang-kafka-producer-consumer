@@ -3,7 +3,7 @@ package kafka_handler
 import log "github.com/sirupsen/logrus"
 
 type KafkaHandler interface {
-	CommitMessageToQueue(message []byte) error
+	CommitMessageToQueue(message []byte) (string, error)
 }
 
 type kafka struct {

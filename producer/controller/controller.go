@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"golang-kafka-producer-consumer/producer/entity"
 	kafka "golang-kafka-producer-consumer/producer/kafka"
 
 	log "github.com/sirupsen/logrus"
@@ -23,14 +24,14 @@ func NewController(kfk kafka.KafkaHandler) Controller {
 	}
 }
 
-//GetAll return all superheroes
+//CommitMessage return all superheroes
 func (c *controller) CommitMessage(message []byte) (interface{}, error) {
-	err := c.kafka_handler.CommitMessageToQueue(message)
+	resp, err := c.kafka_handler.CommitMessageToQueue(message)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "controller", "method": "CommitMessage"}).Error(err.Error())
 		return nil, err
 	}
 	log.WithFields(log.Fields{"package": "controller", "method": "CommitMessage"}).Info("ok")
 
-	return nil, nil
+	return &entity.Message{MSG: resp}, nil
 }

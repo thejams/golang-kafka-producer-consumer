@@ -19,14 +19,14 @@ func (k kafka) connectProducer(brokersUrl []string) (sarama.SyncProducer, error)
 	return conn, nil
 }
 
-func (k kafka) CommitMessageToQueue(message []byte) error {
+func (k kafka) CommitMessageToQueue(message []byte) (string, error) {
 	brokersUrl := []string{}
 	brokersUrl = append(brokersUrl, k.brokers)
 
 	producer, err := k.connectProducer(brokersUrl)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return "", err
 	}
 	defer producer.Close()
 
@@ -38,9 +38,9 @@ func (k kafka) CommitMessageToQueue(message []byte) error {
 	partition, offset, err := producer.SendMessage(msg)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return "", err
 	}
 
-	fmt.Printf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", k.topic, partition, offset)
-	return nil
+	response := fmt.Sprintf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", k.topic, partition, offset)
+	return response, nil
 }
