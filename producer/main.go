@@ -43,8 +43,8 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(commonMiddleware)
 
-	router.HandleFunc("/health", http_server.Health)
-	router.HandleFunc("/msg", http_server.CommitMessage)
+	router.HandleFunc("/health", http_server.Health).Methods("GET")
+	router.HandleFunc("/msg", http_server.CommitMessage).Methods("POST")
 
 	credentials := handlers.AllowCredentials()
 	methods := handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"})
