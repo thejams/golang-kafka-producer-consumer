@@ -26,7 +26,7 @@ func NewController(kfk kafka.KafkaHandler) Controller {
 
 //CommitMessage return all superheroes
 func (c *controller) CommitMessage(message []byte) (interface{}, error) {
-	resp, err := c.kafka_handler.CommitMessageToQueue(message)
+	resp, err := c.kafka_handler.PushMessage(message)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "controller", "method": "CommitMessage"}).Error(err.Error())
 		return nil, err

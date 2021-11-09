@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"golang-kafka-producer-consumer/producer/controller"
 	"log"
@@ -31,13 +32,17 @@ func main() {
 		topic = "myTopic"
 	}
 
-	kafka_handler := kafka.NewKafkaHandler(brokers, topic)
+	clientId := os.Getenv("Client_ID")
+	if len(strings.TrimSpace(clientId)) == 0 {
+		clientId = "my-kafka-client"
+	}
 
-	/* var wg sync.WaitGroup
-	wg.Add(1) */
-	// kafka_handler.MakeConsumer()
+	ctx := context.Background()
+	kafka_go_handler := kafka.NewKafkaGoHandler(ctx, strings.Split(brokers, ","), topic, clientId)
+	//sarama_kafka_handler := kafka.NewSaramaKafkaHandler(strings.Split(brokers, ","), topic)
 
-	ctrl := controller.NewController(kafka_handler)
+	// ctrl := controller.NewController(sarama_kafka_handler) // producer with github.com/Shopify/sarama
+	ctrl := controller.NewController(kafka_go_handler) // producer with github.com/segmentio/kafka-go
 	http_server := httpServer.NewHTTPServer(ctrl)
 
 	router := mux.NewRouter().StrictSlash(true)
