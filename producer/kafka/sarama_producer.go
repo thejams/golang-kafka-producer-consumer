@@ -7,21 +7,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type saramaKafka struct {
+type saramaKafkaProducer struct {
 	brokers []string
 	topic   string
 }
 
-//NewKafkaHandler initialice a new kafka handler
-func NewSaramaKafkaHandler(brokers []string, topic string) KafkaHandler {
+//NewSaramaKafkaProducerHandler initialice a new kafka handler
+func NewSaramaKafkaProducerHandler(brokers []string, topic string) KafkaHandler {
 	log.SetFormatter(&log.JSONFormatter{})
-	return &saramaKafka{
+	return &saramaKafkaProducer{
 		brokers: brokers,
 		topic:   topic,
 	}
 }
 
-func (k saramaKafka) connectProducer(brokersUrl []string) (sarama.SyncProducer, error) {
+func (k saramaKafkaProducer) connectProducer(brokersUrl []string) (sarama.SyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 	config.Producer.RequiredAcks = sarama.WaitForAll
@@ -29,18 +29,18 @@ func (k saramaKafka) connectProducer(brokersUrl []string) (sarama.SyncProducer, 
 	// NewSyncProducer creates a new SyncProducer using the given broker addresses and configuration.
 	conn, err := sarama.NewSyncProducer(brokersUrl, config)
 	if err != nil {
-		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama", "method": "connectProducer"}).Error(err.Error())
+		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "connectProducer"}).Error(err.Error())
 		return nil, err
 	}
 
-	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama", "method": "connectProducer"}).Info("ok")
+	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "connectProducer"}).Info("ok")
 	return conn, nil
 }
 
-func (k saramaKafka) PushMessage(message []byte) (string, error) {
+func (k saramaKafkaProducer) PushMessage(message []byte) (string, error) {
 	producer, err := k.connectProducer(k.brokers)
 	if err != nil {
-		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama", "method": "PushMessage"}).Error(err.Error())
+		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "PushMessage"}).Error(err.Error())
 		return "", err
 	}
 	defer producer.Close()
@@ -52,11 +52,11 @@ func (k saramaKafka) PushMessage(message []byte) (string, error) {
 
 	partition, offset, err := producer.SendMessage(msg)
 	if err != nil {
-		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama", "method": "PushMessage"}).Error(err.Error())
+		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "PushMessage"}).Error(err.Error())
 		return "", err
 	}
 
-	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama", "method": "PushMessage"}).Info("ok")
+	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "PushMessage"}).Info("ok")
 	response := fmt.Sprintf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", k.topic, partition, offset)
 	return response, nil
 }

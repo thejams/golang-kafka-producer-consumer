@@ -1,69 +1,33 @@
 package main
 
 import (
-	"fmt"
+	kafka "golang-kafka-producer-consumer/consumer/kafka"
 	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/Shopify/sarama"
+	"strings"
 )
 
 func main() {
-
-	topic := "myTopic"
-	worker, err := connectConsumer([]string{"localhost:9092"})
-	if err != nil {
-		panic(err)
+	topic := os.Getenv("Kafka_Topic")
+	if len(strings.TrimSpace(topic)) == 0 {
+		topic = "myTopic"
 	}
 
-	// Calling ConsumePartition. It will open one connection per broker
-	// and share it for all partitions that live on it.
-	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetOldest)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Consumer started ")
-	sigchan := make(chan os.Signal, 1)
-	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-	// Count how many message processed
-	msgCount := 0
-
-	// Get signal for finish
-	quit := make(chan bool)
-	go func() {
-		for {
-			select {
-			case err := <-consumer.Errors():
-				fmt.Println(err)
-			case msg := <-consumer.Messages():
-				msgCount++
-				fmt.Printf("Received message Count %d: | Topic(%s) | Message(%s) \n", msgCount, string(msg.Topic), string(msg.Value))
-			case <-sigchan:
-				fmt.Println("Interrupt is detected")
-				quit <- true
-			}
-		}
-	}()
-
-	<-quit
-	fmt.Println("Processed", msgCount, "messages")
-
-	if err := worker.Close(); err != nil {
-		panic(err)
+	brokers := os.Getenv("Kafka_Brokers")
+	if len(strings.TrimSpace(brokers)) == 0 {
+		brokers = "localhost:9092"
 	}
 
-}
-
-func connectConsumer(brokersUrl []string) (sarama.Consumer, error) {
-	config := sarama.NewConfig()
-	config.Consumer.Return.Errors = true
-
-	// Create new consumer
-	conn, err := sarama.NewConsumer(brokersUrl, config)
-	if err != nil {
-		return nil, err
+	clientId := os.Getenv("Client_ID")
+	if len(strings.TrimSpace(clientId)) == 0 {
+		clientId = "my-kafka-client"
 	}
 
-	return conn, nil
+	// sarama consumer
+	// kafka_sarama_consumer_handler := kafka.NewSaramaKafkaConsumerHandler(strings.Split(brokers, ","), topic)
+	// kafka_sarama_consumer_handler.ConsumeMessage()
+
+	// kafka-go consumer
+	kafka_go_consumer_handler := kafka.NewKafkaGoConsumerHandler(strings.Split(brokers, ","), topic, clientId)
+	kafka_go_consumer_handler.ConsumeMessage()
+
 }
