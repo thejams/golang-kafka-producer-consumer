@@ -13,7 +13,6 @@ import (
 	kafka "golang-kafka-producer-consumer/producer/kafka"
 
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -45,25 +44,6 @@ func main() {
 	ctrl := controller.NewController(kafka_go_handler) // producer with github.com/segmentio/kafka-go
 	http_server := httpServer.NewHTTPServer(ctrl)
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.Use(commonMiddleware)
-
-	router.HandleFunc("/health", http_server.Health).Methods("GET")
-	router.HandleFunc("/msg", http_server.CommitMessage).Methods("POST")
-
-	credentials := handlers.AllowCredentials()
-	methods := handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE"})
-	origins := handlers.AllowedMethods([]string{"*"})
-
-	fmt.Printf("server runing in port %v", port)
-	fmt.Println()
-	log.Fatal(http.ListenAndServe(port, handlers.CORS(credentials, methods, origins)(router)))
-
-}
-
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		next.ServeHTTP(w, r)
-	})
+	fmt.Printf("server runing in port %v \n", port)
+	log.Fatal(http.ListenAndServe(port, handlers.CORS(http_server.Credentials, http_server.Methods, http_server.Origins)(http_server.Router)))
 }
