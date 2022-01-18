@@ -24,7 +24,7 @@ func NewHTTPServer(ctrl controller.Controller) *httpServer {
 
 	{
 		router := mux.NewRouter().StrictSlash(true)
-		router.Use(commonMiddleware)
+		router.Use(setHeadersMiddleware)
 		http_server.initRouter(router)
 
 		credentials := handlers.AllowCredentials()
@@ -41,7 +41,7 @@ func NewHTTPServer(ctrl controller.Controller) *httpServer {
 	return http_server
 }
 
-func commonMiddleware(next http.Handler) http.Handler {
+func setHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(w, r)

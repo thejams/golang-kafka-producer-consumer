@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"golang-kafka-producer-consumer/producer/entity"
 	"golang-kafka-producer-consumer/producer/util"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/go-playground/validator"
@@ -14,8 +13,12 @@ import (
 )
 
 func (h *httpServer) initRouter(r *mux.Router) {
-	r.HandleFunc("/health", h.Health).Methods("GET")
-	r.HandleFunc("/msg", h.CommitMessage).Methods("POST")
+	healthRouter := r.PathPrefix("/api/").Subrouter()
+	healthRouter.HandleFunc("/health", h.Health).Methods("GET")
+
+	msgRouter := r.PathPrefix("/kafka/").Subrouter()
+	msgRouter.HandleFunc("/msg", h.CommitMessage).Methods("POST")
+	msgRouter.Use(validateMsgFieldsMiddleware)
 }
 
 // Health verify if the api is up and running
@@ -25,25 +28,12 @@ func (h *httpServer) Health(res http.ResponseWriter, _ *http.Request) {
 
 // CommitMessage commit a message to kafka queue
 func (h *httpServer) CommitMessage(res http.ResponseWriter, req *http.Request) {
-	var msg entity.Message
-	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
+	// extract body from http.Request context
+	ctx := req.Context().Value("msg_object")
+	msg, ok := ctx.(*entity.Message)
+	if !ok {
+		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error("missing body structure")
 		HandleError(res, "Invalid data in request", http.StatusBadRequest)
-		return
-	}
-
-	err = json.Unmarshal(reqBody, &msg)
-	if err != nil {
-		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
-		HandleError(res, "Invalid data in request", http.StatusBadRequest)
-		return
-	}
-
-	err = ValidateFields(msg)
-	if err != nil {
-		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
-		HandleCustomError(res, err)
 		return
 	}
 
