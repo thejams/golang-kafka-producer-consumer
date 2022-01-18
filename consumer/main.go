@@ -23,11 +23,18 @@ func main() {
 	}
 
 	// sarama consumer
-	// kafka_sarama_consumer_handler := kafka.NewSaramaKafkaConsumerHandler(strings.Split(brokers, ","), topic)
-	// kafka_sarama_consumer_handler.ConsumeMessage()
+	/*
+			kafka_sarama_consumer_handler, err := kafka.NewSaramaKafkaConsumerHandler(strings.Split(brokers, ","), topic)
+			if err != nil {
+				panic(err)
+			}
+
+			defer kafka_sarama_consumer_handler.CloseConsumer()
+		 	kafka_sarama_consumer_handler.ConsumeMessage()
+	*/
 
 	// kafka-go consumer
 	kafka_go_consumer_handler := kafka.NewKafkaGoConsumerHandler(strings.Split(brokers, ","), topic, clientId)
+	defer kafka_go_consumer_handler.CloseConsumer()
 	kafka_go_consumer_handler.ConsumeMessage()
-
 }

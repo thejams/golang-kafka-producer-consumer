@@ -11,29 +11,32 @@ import (
 )
 
 type saramaKafkaConsumer struct {
-	brokers []string
-	topic   string
+	topic    string
+	consumer sarama.Consumer
 }
 
 //NewKafkaHandler initialice a new kafka handler
-func NewSaramaKafkaConsumerHandler(brokers []string, topic string) KafkaHandler {
+func NewSaramaKafkaConsumerHandler(brokers []string, topic string) (KafkaHandler, error) {
 	log.SetFormatter(&log.JSONFormatter{})
-	return &saramaKafkaConsumer{
-		brokers: brokers,
-		topic:   topic,
+
+	config := sarama.NewConfig()
+	config.Consumer.Return.Errors = true
+
+	conn, err := sarama.NewConsumer(brokers, config)
+	if err != nil {
+		return nil, err
 	}
+
+	return &saramaKafkaConsumer{
+		consumer: conn,
+		topic:    topic,
+	}, nil
 }
 
-func (k saramaKafkaConsumer) ConsumeMessage() (string, error) {
-	worker, err := k.connectConsumer(k.brokers)
-	if err != nil {
-		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-consumer", "method": "ConsumeMessage"}).Error(err.Error())
-		panic(err)
-	}
-
+func (k saramaKafkaConsumer) ConsumeMessage() {
 	// Calling ConsumePartition. It will open one connection per broker
 	// and share it for all partitions that live on it.
-	consumer, err := worker.ConsumePartition(k.topic, 0, sarama.OffsetOldest)
+	consumer, err := k.consumer.ConsumePartition(k.topic, 0, sarama.OffsetOldest)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-consumer", "method": "ConsumeMessage"}).Error(err.Error())
 		panic(err)
@@ -65,22 +68,13 @@ func (k saramaKafkaConsumer) ConsumeMessage() (string, error) {
 	<-quit
 	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-producer", "method": "ConsumeMessage"}).Info(fmt.Sprintf("Processed: %d messages", msgCount))
 
-	if err := worker.Close(); err != nil {
+	if err := k.consumer.Close(); err != nil {
 		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "sarama-consumer", "method": "ConsumeMessage"}).Error(err.Error())
 		panic(err)
 	}
-	return "", nil
 }
 
-func (k saramaKafkaConsumer) connectConsumer(brokersUrl []string) (sarama.Consumer, error) {
-	config := sarama.NewConfig()
-	config.Consumer.Return.Errors = true
-
-	// Create new consumer
-	conn, err := sarama.NewConsumer(brokersUrl, config)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
+// CloseConsumer closes the consumer
+func (k saramaKafkaConsumer) CloseConsumer() error {
+	return nil
 }

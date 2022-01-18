@@ -38,7 +38,15 @@ func main() {
 
 	ctx := context.Background()
 	kafka_go_handler := kafka.NewKafkaGoProducerHandler(ctx, strings.Split(brokers, ","), topic, clientId)
-	//sarama_kafka_handler := kafka.NewSaramaKafkaProducerHandler(strings.Split(brokers, ","), topic)
+	defer kafka_go_handler.CloseProducer()
+	/*
+		sarama_kafka_handler, err := kafka.NewSaramaKafkaProducerHandler(strings.Split(brokers, ","), topic)
+		if err != nil {
+			panic(err)
+		}
+
+		defer sarama_kafka_handler.CloseProducer()
+	*/
 
 	// ctrl := controller.NewController(sarama_kafka_handler) // producer with github.com/Shopify/sarama
 	ctrl := controller.NewController(kafka_go_handler) // producer with github.com/segmentio/kafka-go

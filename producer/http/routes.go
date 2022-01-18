@@ -2,11 +2,13 @@ package httpServer
 
 import (
 	"encoding/json"
+	"fmt"
 	"golang-kafka-producer-consumer/producer/entity"
 	"golang-kafka-producer-consumer/producer/util"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,14 +40,28 @@ func (h *httpServer) CommitMessage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	msgInBytes, err := json.Marshal(msg)
+	err = ValidateFields(msg)
+	if err != nil {
+		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
+		HandleCustomError(res, err)
+		return
+	}
+
+	msgInBytes, err := json.Marshal(msg.MSG)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
 		HandleError(res, "Invalid data in request", http.StatusBadRequest)
 		return
 	}
 
-	response, err := h.ctrl.CommitMessage(msgInBytes)
+	keyInBytes, err := json.Marshal(msg.Sender)
+	if err != nil {
+		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
+		HandleError(res, "Invalid data in request", http.StatusBadRequest)
+		return
+	}
+
+	response, err := h.ctrl.CommitMessage(msgInBytes, keyInBytes)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "httpServer", "method": "CommitMessage"}).Error(err.Error())
 		HandleCustomError(res, err)
@@ -66,4 +82,14 @@ func HandleCustomError(res http.ResponseWriter, customErr error) {
 	status, err := util.DecodeError(customErr)
 	res.WriteHeader(status)
 	json.NewEncoder(res).Encode(err)
+}
+
+//ValidateFields Validate the request object fields
+func ValidateFields(req interface{}) error {
+	validate := validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		return &util.BadRequestError{Message: fmt.Sprintf("Los siguientes campos son requeridos: %v", err.Error())}
+	}
+	return nil
 }

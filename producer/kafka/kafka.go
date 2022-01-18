@@ -1,5 +1,6 @@
 package kafka_handler
 
 type KafkaHandler interface {
-	PushMessage(message []byte) (string, error)
+	PushMessage(message, key []byte) (string, error)
+	CloseProducer() error
 }

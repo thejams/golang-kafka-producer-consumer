@@ -11,32 +11,23 @@ import (
 )
 
 type kafkaGoProducer struct {
-	brokers  []string
 	topic    string
-	clientId string
 	ctx      context.Context
+	producer *kafka.Writer
 }
 
 //NewKafkaGoProducerHandler initialice a new kafka handler
 func NewKafkaGoProducerHandler(ctx context.Context, brokers []string, topic string, clientId string) KafkaHandler {
 	log.SetFormatter(&log.JSONFormatter{})
-	return &kafkaGoProducer{
-		brokers:  brokers,
-		topic:    topic,
-		clientId: clientId,
-		ctx:      ctx,
-	}
-}
 
-func (k kafkaGoProducer) GetProducer() (*kafka.Writer, error) {
 	dialer := &kafka.Dialer{
 		Timeout:  10 * time.Second,
-		ClientID: k.clientId,
+		ClientID: clientId,
 	}
 
 	config := kafka.WriterConfig{
-		Brokers:          k.brokers,
-		Topic:            k.topic,
+		Brokers:          brokers,
+		Topic:            topic,
 		Balancer:         &kafka.LeastBytes{},
 		Dialer:           dialer,
 		WriteTimeout:     10 * time.Second,
@@ -44,32 +35,32 @@ func (k kafkaGoProducer) GetProducer() (*kafka.Writer, error) {
 		CompressionCodec: snappy.NewCompressionCodec(),
 	}
 
-	w := kafka.NewWriter(config)
-	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "kafka-go-producer", "method": "GetProducer"}).Info("ok")
-	return w, nil
+	return &kafkaGoProducer{
+		topic:    topic,
+		ctx:      ctx,
+		producer: kafka.NewWriter(config),
+	}
 }
 
-func (k kafkaGoProducer) PushMessage(value []byte) (string, error) {
-	producer, err := k.GetProducer()
-	if err != nil {
-		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "kafka-go-producer", "method": "PushMessage"}).Error(err.Error())
-		return "", err
-	}
-	defer producer.Close()
-
+func (k kafkaGoProducer) PushMessage(value, key []byte) (string, error) {
 	message := kafka.Message{
-		Key:   nil,
+		Key:   key,
 		Value: value,
 		Time:  time.Now(),
 	}
 
-	err = producer.WriteMessages(k.ctx, message)
+	err := k.producer.WriteMessages(k.ctx, message)
 	if err != nil {
 		log.WithFields(log.Fields{"package": "kafka_handler", "handler": "kafka-go-producer", "method": "PushMessage"}).Error(err.Error())
 		return "", err
 	}
 
-	response := fmt.Sprintf("Message sent to topic topic(%s)\n", k.topic)
+	response := fmt.Sprintf("Message sent to topic topic(%s) | key(%s)", k.topic, key)
 	log.WithFields(log.Fields{"package": "kafka_handler", "handler": "kafka-go-producer", "method": "PushMessage"}).Info("ok")
 	return response, nil
+}
+
+// CloseProducer close the producer
+func (k kafkaGoProducer) CloseProducer() error {
+	return k.producer.Close()
 }
